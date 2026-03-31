@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log In — AirBrush</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/signup.css"/>
+  <link rel="stylesheet" href="css/login.css"/>
+</head>
+<body class="auth-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="15" stroke="url(#lg1)" stroke-width="1.5"/>
+          <path d="M8 22 Q12 10 16 14 Q20 18 24 8" stroke="url(#lg2)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="24" cy="8" r="2.5" fill="url(#lg2)"/>
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#7C3AED"/>
+              <stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+            <linearGradient id="lg2" x1="8" y1="22" x2="24" y2="8">
+              <stop offset="0%" stop-color="#7C3AED"/>
+              <stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="logo-text">AirBrush</span>
+    </a>
+    <a href="signup.html" class="btn-nav-ghost">Don't have an account? Sign Up</a>
+  </nav>
+
+  <!-- ══════════════════════════════════
+       STEP 1 — EMAIL LOOKUP
+  ══════════════════════════════════ -->
+  <div class="auth-wrap" id="step1">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="step-dots">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-sub">Enter your email and we'll find your account.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="inp-email" placeholder="you@email.com" autocomplete="off"/>
+      </div>
+
+      <div id="step1-error" class="error-msg" style="display:none;"></div>
+      <button class="btn-primary btn-full" id="btn-step1-next">Continue →</button>
+
+      <div class="login-divider">
+        <span>No account yet?</span>
+        <a href="signup.html">Create one free →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 2 — AUTH VERIFICATION
+  ══════════════════════════════════ -->
+  <div class="auth-wrap" id="step2" style="display:none;">
+    <div class="auth-card auth-card-wide">
+      <div class="auth-header">
+        <div class="step-dots">
+          <span class="dot"></span>
+          <span class="dot active"></span>
+          <span class="dot"></span>
+        </div>
+        <h1 class="auth-title" id="step2-title">Verify your Signature</h1>
+        <p class="auth-sub" id="step2-sub">Reproduce the signature you used at sign-up.</p>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar" id="status-bar">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Loading camera & AI models...</span>
+      </div>
+
+      <!-- Face verification banner — top of box, no overlap -->
+      <div id="face-badge" class="face-badge-banner">
+        <span id="face-icon">👤</span>
+        <span id="face-status">Look at the camera to verify your face…</span>
+      </div>
+
+      <!-- Webcam + Canvas / PIN area -->
+      <div class="cam-area">
+
+        <!-- LEFT: webcam with skeleton overlay -->
+        <div class="cam-box">
+          <p class="cam-label">📷 Webcam — Hand Tracking</p>
+          <div class="cam-frame">
+            <video id="webcam" autoplay muted playsinline></video>
+            <canvas id="overlay-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- RIGHT: drawing canvas (Sign/Pattern) -->
+        <div class="cam-box" id="draw-box">
+          <p class="cam-label">🎨 Draw Here</p>
+          <div class="cam-frame">
+            <canvas id="draw-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- RIGHT: PIN (for PIN mode) -->
+        <div class="cam-box" id="pin-box" style="display:none;">
+          <p class="cam-label">🔢 Finger PIN</p>
+          <div class="pin-display">
+            <div class="pin-digits" id="pin-digits">
+              <div class="pin-digit" id="pd0">_</div>
+              <div class="pin-digit" id="pd1">_</div>
+              <div class="pin-digit" id="pd2">_</div>
+              <div class="pin-digit" id="pd3">_</div>
+            </div>
+            <div class="pin-info">
+              <div class="pin-current" id="pin-current">Entering digit 1 of 4</div>
+              <div class="pin-fingers">Fingers detected: <strong id="finger-count">0</strong></div>
+              <div class="pin-timer" id="pin-timer-wrap" style="display:none;">
+                Confirming in <strong id="pin-timer">3</strong>s...
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end cam-area -->
+
+      <!-- Controls for Sign/Pattern -->
+      <div class="ctrl-row" id="draw-controls">
+        <button class="btn-ctrl green" id="btn-start" style="display:none">▶ Start Drawing</button>
+        <button class="btn-ctrl red"   id="btn-stop"  style="display:none" disabled>⬛ Stop</button>
+        <button class="btn-ctrl blue"  id="btn-clear-draw">🗑 Clear</button>
+      </div>
+
+      <!-- Controls for PIN -->
+      <div class="ctrl-row" id="pin-controls" style="display:none;">
+        <div class="pin-hint">Hold up fingers on one or both hands. Count is summed automatically.</div>
+      </div>
+
+      <div id="step2-error" class="error-msg" style="display:none;"></div>
+
+      <div class="auth-actions">
+        <button class="btn-ghost" id="btn-back">← Back</button>
+        <button class="btn-primary" id="btn-verify" disabled>Verify & Log In ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP 3 — SUCCESS
+  ══════════════════════════════════ -->
+  <div class="auth-wrap" id="step3" style="display:none;">
+    <div class="auth-card auth-card-center">
+      <div class="success-anim" id="success-anim">
+        <div class="success-ring"></div>
+        <div class="success-check">✓</div>
+      </div>
+      <h1 class="auth-title" style="margin-top:1.5rem;" id="success-name">Welcome back!</h1>
+      <p class="auth-sub">Identity verified. Redirecting to your canvas...</p>
+      <div class="redirect-bar">
+        <div class="redirect-fill" id="redirect-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       STEP — FAILED
+  ══════════════════════════════════ -->
+  <div class="auth-wrap" id="step-fail" style="display:none;">
+    <div class="auth-card auth-card-center">
+      <div class="fail-icon">❌</div>
+      <h1 class="auth-title">Verification Failed</h1>
+      <p class="auth-sub" id="fail-reason">We couldn't verify your identity. Please try again.</p>
+      <div style="display:flex; gap:1rem; margin-top:2rem; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-ghost" id="btn-retry">Try Again</button>
+        <a href="signup.html" class="btn-primary">Create new account</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MediaPipe + face-api CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
