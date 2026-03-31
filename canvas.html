@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Canvas — AirBrush</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/canvas.css"/>
+  <!-- MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body class="canvas-body">
+
+  <!-- NAVBAR -->
+  <nav class="canvas-nav">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="15" stroke="url(#cnlg1)" stroke-width="1.5"/>
+          <path d="M8 22 Q12 10 16 14 Q20 18 24 8" stroke="url(#cnlg2)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="24" cy="8" r="2.5" fill="url(#cnlg2)"/>
+          <defs>
+            <linearGradient id="cnlg1" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#7C3AED"/>
+              <stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+            <linearGradient id="cnlg2" x1="8" y1="22" x2="24" y2="8">
+              <stop offset="0%" stop-color="#7C3AED"/>
+              <stop offset="100%" stop-color="#06B6D4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="logo-text">AirBrush</span>
+    </a>
+    <div class="nav-center">
+      <div class="status-pill">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Click Start to begin</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user">👤 Guest</span>
+      <a href="gallery.html" class="btn-nav-ghost">My Gallery</a>
+      <button class="btn-nav-ghost" id="btn-logout">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- 3-COLUMN LAYOUT -->
+  <div class="canvas-layout">
+
+    <!-- LEFT PANEL -->
+    <aside class="left-panel">
+      <div class="panel-section">
+        <div class="panel-label">MODE</div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btn-air-mode">✋ Air Draw</button>
+          <button class="mode-btn" id="btn-mouse-mode">🖱 Mouse</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">TOOL</div>
+        <div class="tool-row">
+          <button class="tool-btn active" id="btn-brush">🖌 Brush</button>
+          <button class="tool-btn" id="btn-eraser">⬜ Eraser</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">COLORS</div>
+        <div class="swatch-grid">
+          <div class="swatch active" data-color="#7C3AED" style="background:#7C3AED"></div>
+          <div class="swatch" data-color="#06B6D4" style="background:#06B6D4"></div>
+          <div class="swatch" data-color="#EC4899" style="background:#EC4899"></div>
+          <div class="swatch" data-color="#F59E0B" style="background:#F59E0B"></div>
+          <div class="swatch" data-color="#10B981" style="background:#10B981"></div>
+          <div class="swatch" data-color="#EF4444" style="background:#EF4444"></div>
+          <div class="swatch" data-color="#3B82F6" style="background:#3B82F6"></div>
+          <div class="swatch" data-color="#F97316" style="background:#F97316"></div>
+          <div class="swatch" data-color="#ffffff" style="background:#fff;border:1px solid rgba(255,255,255,0.25)"></div>
+          <div class="swatch" data-color="#000000" style="background:#000"></div>
+        </div>
+        <input type="color" id="color-custom" value="#7C3AED" class="color-picker" title="Custom colour"/>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">BRUSH SIZE — <span id="size-label">4</span></div>
+        <input type="range" id="brush-size" min="1" max="60" value="4" class="slider"/>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">OPACITY — <span id="opacity-label">100</span>%</div>
+        <input type="range" id="brush-opacity" min="10" max="100" value="100" class="slider"/>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">ACTIONS</div>
+        <div class="action-stack">
+          <button class="action-btn green" id="btn-start" style="display:none">▶ Start</button>
+          <button class="action-btn red" id="btn-stop" style="display:none" disabled>■ Stop</button>
+          <button class="action-btn" id="btn-undo">↩ Undo</button>
+          <button class="action-btn" id="btn-clear">🗑 Clear</button>
+          <button class="action-btn" id="btn-download">⬇ Save</button>
+        </div>
+      </div>
+      <div class="panel-section" id="gesture-guide">
+        <div class="panel-label">GESTURES</div>
+        <div class="gesture-list">
+          <div class="gesture-item"><span>👌</span><span>Pinch = Draw</span></div>
+          <div class="gesture-item"><span>✌️</span><span>Peace = Eraser</span></div>
+          <div class="gesture-item"><span>🖐</span><span>Palm = Stop</span></div>
+          <div class="gesture-item"><span>✊</span><span>Fist shake = Undo</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTRE: WEBCAM -->
+    <div class="cam-panel" id="cam-panel">
+      <div class="cam-panel-label">📷 Live Hand Tracking</div>
+      <div class="cam-frame-box">
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="overlay-canvas"></canvas>
+        <div class="gesture-indicator" id="gesture-indicator"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: DRAW CANVAS + AI -->
+    <div class="right-panel">
+      <div class="draw-section">
+        <div class="draw-label">🎨 Your Canvas</div>
+        <div class="draw-frame-box">
+          <canvas id="draw-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="ai-section">
+        <div class="desc-row">
+          <textarea id="ai-description" class="ai-desc-input"
+            placeholder="Describe your drawing for AI generation (or use 🎤 voice)…"
+            rows="2"></textarea>
+          <button class="voice-btn" id="btn-voice" title="Voice input">🎤</button>
+        </div>
+
+        <details class="ai-settings">
+          <summary class="ai-settings-toggle">⚙️ AI Settings</summary>
+          <div class="ai-settings-body">
+            <div class="settings-row">
+              <label>Model</label>
+              <select id="ai-model-select" class="ai-select">
+                <option value="stabilityai/stable-diffusion-2-1">Stable Diffusion 2.1</option>
+                <option value="runwayml/stable-diffusion-v1-5">Stable Diffusion 1.5</option>
+                <option value="CompVis/stable-diffusion-v1-4">Stable Diffusion 1.4</option>
+                <option value="prompthero/openjourney">OpenJourney</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label>HF Token <small>(optional — faster & no CORS issues)</small></label>
+              <div class="token-row">
+                <input type="password" id="hf-token" placeholder="hf_…" class="token-input"/>
+                <button class="btn-save-token" id="btn-save-token">Save</button>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <button class="btn-generate" id="btn-generate">✨ Generate AI Art</button>
+
+        <div class="ai-result-box">
+          <div class="ai-placeholder" id="ai-placeholder">
+            <span class="ai-placeholder-icon">🎨</span>
+            <span>AI art will appear here</span>
+          </div>
+          <div class="ai-loading" id="ai-loading" style="display:none">
+            <div class="ai-spinner"></div>
+            <span id="ai-loading-text">Generating…</span>
+          </div>
+          <img id="ai-result-img" class="ai-result-img" style="display:none" alt="AI generated art"/>
+          <div class="ai-actions" id="ai-actions" style="display:none">
+            <button class="ai-action-btn" id="btn-save-ai">⬇ Save AI</button>
+            <button class="ai-action-btn" id="btn-save-gallery" style="background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.5);color:#a78bfa;">🖼 Save to Gallery</button>
+            <button class="ai-action-btn" id="btn-retry-ai">🔄 Retry</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /canvas-layout -->
+
+  <script src="js/canvas.js"></script>
+</body>
+</html>
